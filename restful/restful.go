@@ -1,8 +1,8 @@
 package restful
 
 import (
-	"ProxyPool/database"
 	"fmt"
+	"github.com/ironbang/proxypool/database"
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/context"
 )
