@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/syndtr/goleveldb/leveldb"
 	"log"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -67,25 +68,11 @@ func NewStore() *Store {
 	once.Do(func() {
 		store = &Store{}
 		var err error
-		if store.db, err = leveldb.OpenFile(`data\leveldb`, nil); err != nil {
+		leveldbpath := `data\leveldb`
+		os.MkdirAll(leveldbpath, os.ModePerm)
+		if store.db, err = leveldb.OpenFile(leveldbpath, nil); err != nil {
 			log.Fatal(err.Error())
 		}
-		/*
-			func() {
-				iter := store.db.NewIterator(nil, nil)
-				for iter.Next() {
-					ip := NewIPInfo("")
-					if err := json.Unmarshal(iter.Value(),ip);err!=nil{
-						continue
-					}
-					if ip.Deletable(){
-						if err := store.db.Delete(iter.Key(), nil); err != nil {
-							continue
-						}
-					}
-				}
-				iter.Release()
-			}()*/
 	})
 	return store
 }

@@ -19,12 +19,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-
-	go func() {
-		http.HandleFunc("/", handler)
-		http.ListenAndServe(":11181", nil)
-	}()
-
 	func() {
 		defer func() {
 			if err := recover(); err != nil {
