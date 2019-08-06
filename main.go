@@ -1,11 +1,11 @@
 package main
 
 import (
-	"ProxyPool/checkip"
-	"ProxyPool/crawler"
-	"ProxyPool/database"
-	"ProxyPool/restful"
 	"fmt"
+	"github.com/ironbang/proxypool/checkip"
+	"github.com/ironbang/proxypool/crawler"
+	"github.com/ironbang/proxypool/database"
+	"github.com/ironbang/proxypool/restful"
 	"net/http"
 	"runtime/pprof"
 	"sync"

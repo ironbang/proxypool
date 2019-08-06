@@ -1,8 +1,8 @@
 package crawler
 
 import (
-	"ProxyPool/crawler/spider"
 	"fmt"
+	"github.com/ironbang/proxypool/crawler/spider"
 	"time"
 )
 

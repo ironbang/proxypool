@@ -1,9 +1,9 @@
 package checkip
 
 import (
-	"ProxyPool/database"
 	"fmt"
 	"github.com/ironbang/httpclient"
+	"github.com/ironbang/proxypool/database"
 	"net/http"
 	"time"
 )
