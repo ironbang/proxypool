@@ -22,15 +22,29 @@ func RESTFul() {
 	})
 	v1 := app.Party("/v1")
 	{
-		v1.Get("/get-ip", func(ctx context.Context) {
-			store := database.NewStore()
-			ips := store.GetReliability(0, 0.2)
-
-			r := iris.Map{
-				"total": len(ips),
-				"info":  ips,
+		v1.Get("/getip", func(ctx context.Context) {
+			count, err := ctx.URLParamInt("count")
+			if err != nil {
+				count = 30
 			}
-			ctx.JSON(r)
+			limit, err := ctx.URLParamFloat64("limit")
+			if err != nil {
+				limit = 0.2
+			}
+			store := database.NewStore()
+			ips, err := store.GetReliability(count, limit)
+			if err == nil {
+				r := iris.Map{
+					"total": len(ips),
+					"info":  ips,
+				}
+				ctx.JSON(r)
+			} else {
+				r := iris.Map{
+					"error": err.Error(),
+				}
+				ctx.JSON(r)
+			}
 		})
 	}
 

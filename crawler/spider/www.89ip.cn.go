@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/ironbang/requests"
 	"regexp"
-	"time"
 )
 
 func IP89Spider(sysChan chan<- string) {
@@ -19,7 +18,6 @@ func IP89Spider(sysChan chan<- string) {
 	ips := ip_reg.FindAllString(resp.Text(), -1)
 	for _, ip := range ips {
 		//ip = "http://" + ip
-		time.Sleep(time.Duration(300) * time.Millisecond)
 		sysChan <- ip
 	}
 }

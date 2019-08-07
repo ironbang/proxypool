@@ -3,36 +3,37 @@ package checkip
 import (
 	"fmt"
 	"github.com/ironbang/httpclient"
+	"github.com/ironbang/proxypool/common/function"
 	"github.com/ironbang/proxypool/database"
 	"net/http"
 	"time"
 )
 
-func checkProxyIp(proxy string) (*database.IPInfo, error) {
+func checkProxyIp(proxy string) (*database.ProxyIPInfo, error) {
 	// 写入数据库
-	ipinfo := database.NewIPInfo(proxy)
+	ipinfo := &database.ProxyIPInfo{IpPort: proxy}
 
 	client := &httpclient.HttpClient{ProxyScheme: "http", ProxyIp: proxy, DialTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second}
 	client, err := client.NewClient()
 	t := time.Now() // get current time
 	resp, err := client.Get("http://httpbin.org/ip")
-	ipinfo.LastCheckTime = t.Format("2006-01-02 15:04:05")
 	elapsed := time.Since(t)
+	ipinfo.LastCheckTime = function.FormatTime(t)
 	ipinfo.Speed = elapsed.Seconds()
 	if err != nil {
-		ipinfo.Result = append(ipinfo.Result, false)
+		ipinfo.Results = "0"
 		fmt.Printf("[时长: %f] IP[%s]失效[%s]\n", elapsed.Seconds(), proxy, err.Error())
 	} else {
 		if resp != nil {
 			if resp.StatusCode == http.StatusOK {
 				fmt.Printf("[时长: %f] 检测IP[%s]成功\n", elapsed.Seconds(), proxy)
-				ipinfo.Result = append(ipinfo.Result, true)
+				ipinfo.Results = "1"
 			} else {
-				ipinfo.Result = append(ipinfo.Result, false)
+				ipinfo.Results = "0"
 				fmt.Printf("[时长: %f] IP[%s]失效[%d]\n", elapsed.Seconds(), proxy, resp.StatusCode)
 			}
 		} else {
-			ipinfo.Result = append(ipinfo.Result, false)
+			ipinfo.Results = "0"
 			fmt.Printf("[时长: %f] IP[%s]失效[%d]\n", elapsed.Seconds(), proxy, resp.StatusCode)
 		}
 	}
@@ -50,7 +51,7 @@ func CheckIp(sysChan <-chan string) {
 				}
 			}()
 			ip := <-sysChan
-
+			time.Sleep(time.Duration(100) * time.Millisecond)
 			go func(proxy string) {
 				ipinfo, _ := checkProxyIp(proxy)
 				store.Put(ipinfo)

@@ -6,17 +6,8 @@ import (
 	"github.com/ironbang/proxypool/crawler"
 	"github.com/ironbang/proxypool/database"
 	"github.com/ironbang/proxypool/restful"
-	"net/http"
-	"runtime/pprof"
 	"sync"
 )
-
-func handler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain")
-
-	p := pprof.Lookup("goroutine")
-	p.WriteTo(w, 1)
-}
 
 func main() {
 	func() {
