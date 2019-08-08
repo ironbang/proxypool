@@ -109,7 +109,7 @@ func (s *Store) GetAll() (ips []*ProxyIPInfo, err error) {
 	return
 }
 
-func CheckStore(sysChan chan<- string) {
+func CheckStore(sysChan chan<- string, group *sync.WaitGroup) {
 	fmt.Println("数据库中IP检测模块启动...")
 	store := NewStore()
 	for {
@@ -129,6 +129,6 @@ func CheckStore(sysChan chan<- string) {
 				sysChan <- ip.IpPort
 			}
 		}()
-		time.Sleep(time.Duration(300) * time.Second)
+		time.Sleep(time.Duration(10) * time.Minute)
 	}
 }

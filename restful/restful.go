@@ -5,15 +5,11 @@ import (
 	"github.com/ironbang/proxypool/database"
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/context"
+	"sync"
 )
 
-func RESTFul() {
+func RESTFul(group *sync.WaitGroup) {
 	fmt.Println("启动RESTFul模块...")
-	/*
-		mux := http.NewServeMux()
-		mux.HandleFunc("/ip", ProxyHandler)
-		http.ListenAndServe("0.0.0.0:8080", mux)
-	*/
 	app := iris.Default()
 	app.Get("/", func(context context.Context) {
 		context.JSON(iris.Map{
@@ -47,6 +43,5 @@ func RESTFul() {
 			}
 		})
 	}
-
 	app.Run(iris.Addr(":8080"))
 }
