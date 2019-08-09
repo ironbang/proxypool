@@ -1,0 +1,23 @@
+{
+	"Chanel": {
+		"CheckIpCoroutinePool": {
+			"Max": 20,
+			"Description": "校验代理IP的协程池"
+		},
+		"TransferProxyIP": {
+			"Max": 10,
+			"Description": "用于校验代理IP的通道，将待校验的代理IP对象发送到该通道中"
+		},
+		"DatabaseConnection": {
+			"Max": 100,
+			"Description": "控制数据库连接数目"
+		}
+	},
+	"Database": {
+		"IP": "127.0.0.1",
+		"Port": "3306",
+		"User": "root",
+		"Password": "xxxxxx",
+		"Tablename": "proxyip"
+	}
+}

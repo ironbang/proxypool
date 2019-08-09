@@ -2,11 +2,12 @@ package spider
 
 import (
 	"fmt"
+	"github.com/ironbang/proxypool/database/struct_"
 	"github.com/ironbang/requests"
 	"regexp"
 )
 
-func IP89Spider(sysChan chan<- string) {
+func IP89Spider() {
 	fmt.Println("开始爬取89ip")
 	url := `http://www.89ip.cn/tqdl.html?num=9999&address=&kill_address=&port=&kill_port=&isp=`
 	// url = `http://www.baidu.com`
@@ -18,6 +19,8 @@ func IP89Spider(sysChan chan<- string) {
 	ips := ip_reg.FindAllString(resp.Text(), -1)
 	for _, ip := range ips {
 		//ip = "http://" + ip
-		sysChan <- ip
+		// checkip.PutProxy(ip)
+		proxyinfo := &struct_.ProxyIPInfo{IpPort: ip, Checked: false}
+		proxyinfo.Insert()
 	}
 }

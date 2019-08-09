@@ -3,11 +3,10 @@ package crawler
 import (
 	"fmt"
 	"github.com/ironbang/proxypool/crawler/spider"
-	"sync"
 	"time"
 )
 
-func Crawler(sysChan chan<- string, group *sync.WaitGroup) {
+func Crawler() {
 	fmt.Println("启动爬虫模块...")
 	for {
 		func() {
@@ -17,7 +16,7 @@ func Crawler(sysChan chan<- string, group *sync.WaitGroup) {
 				}
 			}()
 			// www.89ip.cn
-			spider.IP89Spider(sysChan)
+			spider.IP89Spider()
 		}()
 		time.Sleep(time.Duration(20) * time.Minute)
 	}

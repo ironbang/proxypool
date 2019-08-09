@@ -3,60 +3,105 @@ package checkip
 import (
 	"fmt"
 	"github.com/ironbang/httpclient"
+	"github.com/ironbang/proxypool/common/config"
 	"github.com/ironbang/proxypool/common/function"
-	"github.com/ironbang/proxypool/database"
+	"github.com/ironbang/proxypool/database/struct_"
 	"net/http"
-	"sync"
 	"time"
 )
 
-func checkProxyIp(proxy string) (*database.ProxyIPInfo, error) {
-	// 写入数据库
-	ipinfo := &database.ProxyIPInfo{IpPort: proxy}
+var maxProxyChan = config.GetChanelMax("TransferProxyIP")
+var proxyChan chan *struct_.ProxyIPInfo
 
-	client := &httpclient.HttpClient{ProxyScheme: "http", ProxyIp: proxy, DialTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second}
+func init() {
+	proxyChan = make(chan *struct_.ProxyIPInfo, maxProxyChan)
+}
+
+func checkProxyIp(proxy *struct_.ProxyIPInfo) (*struct_.ProxyIPInfo, error) {
+	client := &httpclient.HttpClient{ProxyScheme: "http", ProxyIp: proxy.IpPort, DialTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second}
 	client, err := client.NewClient()
 	t := time.Now() // get current time
 	resp, err := client.Get("http://httpbin.org/ip", make(map[string]string))
 	elapsed := time.Since(t)
-	ipinfo.LastCheckTime = function.FormatTime(t)
-	ipinfo.Speed = elapsed.Seconds()
+	proxy.LastCheckTime = function.FormatTime(t)
+	proxy.Speed = elapsed.Seconds()
 	if err != nil {
-		ipinfo.Results = "0"
-		fmt.Printf("[%s] [时长: %f] IP[%s]失效[%s]\n", function.FormatTime(time.Now()), elapsed.Seconds(), proxy, err.Error())
+		proxy.Results = proxy.Results + "0"
+		fmt.Printf("[%s] [时长: %f] IP[%s]失效[%s]\n", function.FormatTime(time.Now()), elapsed.Seconds(), proxy.IpPort, err.Error())
 	} else {
 		if resp != nil {
 			if resp.StatusCode == http.StatusOK {
-				fmt.Printf("[%s] [时长: %f] 检测IP[%s]成功\n", function.FormatTime(time.Now()), elapsed.Seconds(), proxy)
-				ipinfo.Results = "1"
+				fmt.Printf("[%s] [时长: %f] 检测IP[%s]成功\n", function.FormatTime(time.Now()), elapsed.Seconds(), proxy.IpPort)
+				proxy.Results = proxy.Results + "1"
 			} else {
-				ipinfo.Results = "0"
-				fmt.Printf("[%s] [时长: %f] IP[%s]失效[%d]\n", function.FormatTime(time.Now()), elapsed.Seconds(), proxy, resp.StatusCode)
+				proxy.Results = proxy.Results + "0"
+				fmt.Printf("[%s] [时长: %f] IP[%s]失效[%d]\n", function.FormatTime(time.Now()), elapsed.Seconds(), proxy.IpPort, resp.StatusCode)
 			}
 		} else {
-			ipinfo.Results = "0"
-			fmt.Printf("[%s] [时长: %f] IP[%s]失效[%d]\n", function.FormatTime(time.Now()), elapsed.Seconds(), proxy, resp.StatusCode)
+			proxy.Results = proxy.Results + "0"
+			fmt.Printf("[%s] [时长: %f] IP[%s]失效[%d]\n", function.FormatTime(time.Now()), elapsed.Seconds(), proxy.IpPort, resp.StatusCode)
 		}
 	}
-	return ipinfo, nil
+
+	proxy.Checked = true
+	return proxy, nil
 }
 
-func CheckIp(sysChan <-chan string, group *sync.WaitGroup) {
+func PutProxy(proxy *struct_.ProxyIPInfo) {
+	for len(proxyChan) >= maxProxyChan {
+		time.Sleep(500 * time.Millisecond)
+	}
+	proxyChan <- proxy
+}
+
+func CheckIp() {
+	maxPool := config.GetChanelMax("CheckIpCoroutinePool")
+	pool := make(chan bool, maxPool)
 	fmt.Println("校验模块...")
-	store := database.NewStore()
 	for {
-		func() {
+		for len(pool) >= maxPool {
+			time.Sleep(10 * time.Second)
+		}
+		proxy := <-proxyChan
+		go func(proxy *struct_.ProxyIPInfo) {
+			pool <- true
+			defer func() {
+				if err := recover(); err != nil {
+					fmt.Println(err)
+				}
+				<-pool
+			}()
+			var err error
+			proxy, err = checkProxyIp(proxy)
+			if err == nil {
+				proxy.Update()
+			}
+		}(proxy)
+	}
+}
+
+func CheckStore() {
+	fmt.Println("数据库中IP检测模块启动...")
+	for {
+		// start := time.Now()
+		_ = func() int {
 			defer func() {
 				if err := recover(); err != nil {
 					fmt.Println(err)
 				}
 			}()
-			ip := <-sysChan
-			time.Sleep(time.Duration(100) * time.Millisecond)
-			go func(proxy string) {
-				ipinfo, _ := checkProxyIp(proxy)
-				store.Put(ipinfo)
-			}(ip)
+			ips, err := struct_.GetAll()
+			if err != nil {
+				fmt.Println(err.Error())
+				return 0
+			}
+			fmt.Printf("数据库中共有%d个IP需要进行检测\n", len(ips))
+			for _, ip := range ips {
+				PutProxy(ip)
+			}
+			return len(ips)
 		}()
+		// fmt.Printf("共检测%d个代理IP，共耗时%0.2f秒",total,time.Since(start).Seconds())
+		time.Sleep(5 * time.Millisecond)
 	}
 }

@@ -2,13 +2,12 @@ package restful
 
 import (
 	"fmt"
-	"github.com/ironbang/proxypool/database"
+	"github.com/ironbang/proxypool/database/struct_"
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/context"
-	"sync"
 )
 
-func RESTFul(group *sync.WaitGroup) {
+func RESTFul() {
 	fmt.Println("启动RESTFul模块...")
 	app := iris.Default()
 	app.Get("/", func(context context.Context) {
@@ -27,8 +26,7 @@ func RESTFul(group *sync.WaitGroup) {
 			if err != nil {
 				limit = 0.2
 			}
-			store := database.NewStore()
-			ips, err := store.GetReliability(count, limit)
+			ips, err := struct_.GetReliability(count, limit)
 			if err == nil {
 				r := iris.Map{
 					"total": len(ips),
